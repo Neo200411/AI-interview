@@ -12,17 +12,70 @@ const Results = () => {
   const [copySuccess, setCopySuccess] = useState(false);
 
   useEffect(() => {
-    if (location.state?.allEvaluations) {
-      setEvaluations(location.state.allEvaluations);
-    } else {
-      // If accessed directly without state, we should ideally fetch from backend,
-      // but for this flow we'll redirect back to dashboard if missing
-      navigate('/dashboard');
-    }
-  }, [location, navigate]);
+    const fetchResults = async () => {
+      if (location.state?.allEvaluations) {
+        setEvaluations(location.state.allEvaluations);
+      } else {
+        // Fallback: Fetch from backend if state is lost on refresh
+        try {
+          const response = await axiosInstance.get(`/api/session/${sessionId}`);
+          const sessionData = response.data;
+          
+          if (sessionData.answers && sessionData.answers.length > 0) {
+            // Map backend schema to frontend expectation
+            const mappedEvaluations = sessionData.answers.map(ans => ({
+              question: ans.question,
+              userAnswer: ans.userAnswer,
+              score: ans.score,
+              modelAnswer: ans.modelAnswer,
+              // Parse the feedback string back into individual fields if possible
+              // Our backend stores them joined by newlines
+              ...parseFeedback(ans.feedback)
+            }));
+            setEvaluations(mappedEvaluations);
+          } else {
+            navigate('/dashboard');
+          }
+        } catch (err) {
+          console.error('Failed to fetch session results:', err);
+          navigate('/dashboard');
+        }
+      }
+    };
+
+    fetchResults();
+  }, [location, navigate, sessionId]);
+
+  // Helper to parse the feedback string stored in backend
+  const parseFeedback = (feedbackStr) => {
+    const result = {
+      whatWasGood: '',
+      whatWasMissing: '',
+      keyTakeaway: ''
+    };
+    
+    if (!feedbackStr) return result;
+
+    const goodMatch = feedbackStr.match(/Good: (.*?)(?=\nMissing:|$)/s);
+    const missingMatch = feedbackStr.match(/Missing: (.*?)(?=\nTakeaway:|$)/s);
+    const takeawayMatch = feedbackStr.match(/Takeaway: (.*)/s);
+
+    if (goodMatch) result.whatWasGood = goodMatch[1].trim();
+    if (missingMatch) result.whatWasMissing = missingMatch[1].trim();
+    if (takeawayMatch) result.keyTakeaway = takeawayMatch[1].trim();
+
+    return result;
+  };
 
   if (!evaluations.length) {
-    return <div className="container">Loading results...</div>;
+    return (
+      <div className="container center-container">
+        <div className="spinner-container">
+          <div className="spinner"></div>
+          <p>Loading results...</p>
+        </div>
+      </div>
+    );
   }
 
   // Calculate aggregates

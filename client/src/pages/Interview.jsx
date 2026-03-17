@@ -9,28 +9,76 @@ const Interview = () => {
   const location = useLocation();
   const navigate = useNavigate();
   
-  const questions = location.state?.questions || [];
-  const role = location.state?.role || 'Software Engineer';
+  const [questions, setQuestions] = useState(location.state?.questions || []);
+  const [role, setRole] = useState(location.state?.role || 'Software Engineer');
+  const [loading, setLoading] = useState(!questions.length);
 
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [userAnswer, setUserAnswer] = useState('');
-  const [evaluation, setEvaluation] = useState(null);
-  const [isEvaluating, setIsEvaluating] = useState(false);
-  const [allEvaluations, setAllEvaluations] = useState([]);
-  const [error, setError] = useState(null);
-  const [showModelAnswer, setShowModelAnswer] = useState(false);
+  useEffect(() => {
+    const resumeSession = async () => {
+      if (questions.length > 0) return;
 
-  // New Feature States
-  const [timeEnabled, setTimeEnabled] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(TIME_LIMIT);
-  const [hint, setHint] = useState('');
-  const [isHinting, setIsHinting] = useState(false);
-  const [followUpQuestion, setFollowUpQuestion] = useState('');
-  const [isFollowGenerating, setIsFollowGenerating] = useState(false);
+      try {
+        const response = await axiosInstance.get(`/api/session/${sessionId}`);
+        const sessionData = response.data;
+        
+        if (sessionData.questions && sessionData.questions.length > 0) {
+          setQuestions(sessionData.questions);
+          setRole(sessionData.role || 'Software Engineer');
+          
+          // Resume progress: skip questions already answered
+          if (sessionData.answers && sessionData.answers.length > 0) {
+            const answeredCount = sessionData.answers.length;
+            
+            // Map previous evaluations to state
+            const previousEvaluations = sessionData.answers.map(ans => ({
+              score: ans.score,
+              whatWasGood: ans.feedback.split('\n')[0].replace('Good: ', ''),
+              whatWasMissing: ans.feedback.split('\n')[1].replace('Missing: ', ''),
+              keyTakeaway: ans.feedback.split('\n')[2].replace('Takeaway: ', ''),
+              modelAnswer: ans.modelAnswer,
+              question: ans.question,
+              userAnswer: ans.userAnswer
+            }));
+            
+            setAllEvaluations(previousEvaluations);
+            
+            if (answeredCount < sessionData.questions.length) {
+              setCurrentIndex(answeredCount);
+            } else {
+              // If all answered, go to results
+              navigate(`/session/${sessionId}/results`, { 
+                state: { allEvaluations: previousEvaluations, role: sessionData.role } 
+              });
+            }
+          }
+        } else {
+          navigate('/dashboard');
+        }
+      } catch (err) {
+        console.error('Failed to resume interview session:', err);
+        navigate('/dashboard');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    resumeSession();
+  }, [questions.length, sessionId, navigate]);
 
   const timerRef = useRef(null);
 
-  // Fallback in case questions aren't passed via routing state
+  if (loading) {
+    return (
+      <div className="container center-container">
+        <div className="spinner-container">
+          <div className="spinner"></div>
+          <p>Resuming session...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Fallback if still no questions
   if (!questions.length) {
     return (
       <div className="container center-container">

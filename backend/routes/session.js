@@ -89,6 +89,20 @@ router.get('/history', auth, async (req, res) => {
   }
 });
 
+// GET /:sessionId
+router.get('/:sessionId', auth, async (req, res) => {
+  try {
+    const session = await Session.findById(req.params.sessionId);
+    if (!session || session.userId.toString() !== req.user.id) {
+      return res.status(404).json({ message: 'Session not found or access denied.' });
+    }
+    return res.status(200).json(session);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // POST /evaluate
 router.post('/evaluate', auth, async (req, res) => {
   try {
