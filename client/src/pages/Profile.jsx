@@ -52,11 +52,8 @@ const Profile = () => {
 
     try {
       const response = await axiosInstance.put('/api/user/profile', profile);
-      // Update global auth state with new name if it changed
-      if (response.data.name !== user.name) {
-        const token = localStorage.getItem('token');
-        login(token, response.data);
-      }
+      const token = localStorage.getItem('token');
+      login(token, response.data);
       setMessage({ type: 'success', text: 'Profile updated successfully!' });
     } catch (err) {
       console.error(err);
@@ -152,7 +149,18 @@ const Profile = () => {
             </div>
 
             {message.text && (
-              <div className={message.type === 'error' ? 'error-message' : 'error-message'} style={message.type === 'success' ? { background: 'rgba(34,197,94,0.08)', borderColor: '#22c55e', color: '#4ade80' } : {}}>
+              <div 
+                className={message.type === 'success' ? 'success-message' : 'error-message'}
+                style={message.type === 'success' ? { 
+                  padding: '0.75rem 1rem', 
+                  borderRadius: 'var(--radius-sm)', 
+                  fontSize: '0.875rem', 
+                  marginTop: '0.5rem',
+                  background: 'rgba(34,197,94,0.08)', 
+                  border: '1px solid #22c55e', 
+                  color: '#4ade80' 
+                } : {}}
+              >
                 {message.text}
               </div>
             )}

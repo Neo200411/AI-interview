@@ -1,6 +1,7 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../api/axios';
+import { useAuth } from '../context/AuthContext';
 
 const ROLES = [
   'Software Engineer',
@@ -24,6 +25,13 @@ const NewSession = () => {
 
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (user?.targetRole && ROLES.includes(user.targetRole)) {
+      setRole(user.targetRole);
+    }
+  }, [user]);
 
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];

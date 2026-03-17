@@ -56,7 +56,10 @@ router.post('/register', async (req, res) => {
       user: {
         id: savedUser._id,
         name: savedUser.name,
-        email: savedUser.email
+        email: savedUser.email,
+        targetRole: savedUser.targetRole || '',
+        targetCompany: savedUser.targetCompany || '',
+        bio: savedUser.bio || ''
       }
     });
 
@@ -101,7 +104,10 @@ router.post('/login', async (req, res) => {
       user: {
         id: user._id,
         name: user.name,
-        email: user.email
+        email: user.email,
+        targetRole: user.targetRole || '',
+        targetCompany: user.targetCompany || '',
+        bio: user.bio || ''
       }
     });
 
