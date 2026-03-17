@@ -1,3 +1,5 @@
+const helmet = require('helmet');
+const morgan = require('morgan');
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
@@ -10,8 +12,16 @@ const uploadRoutes = require('./routes/upload');
 
 const app = express();
 
-// Middleware
-app.use(cors());
+// Security & Logging Middleware
+app.use(helmet());
+app.use(morgan('dev'));
+
+const corsOptions = {
+  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  optionsSuccessStatus: 200
+};
+app.use(cors(corsOptions));
+
 app.use(express.json());
 
 // Routes
@@ -23,6 +33,15 @@ app.use('/api/upload', uploadRoutes);
 // Test Route
 app.get('/', (req, res) => {
   res.json({ message: 'Interview Prep API is running!' });
+});
+
+// Global Error Handler
+app.use((err, req, res, next) => {
+  console.error('[ERROR]', err.stack);
+  res.status(err.status || 500).json({
+    message: err.message || 'Internal Server Error',
+    error: process.env.NODE_ENV === 'development' ? err : {}
+  });
 });
 
 const PORT = process.env.PORT || 5000;

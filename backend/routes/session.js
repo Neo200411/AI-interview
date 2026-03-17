@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { ChatGroq } = require('@langchain/groq');
 const { HumanMessage } = require('@langchain/core/messages');
+const rateLimit = require('express-rate-limit');
 const Session = require('../models/Session');
 const auth = require('../middleware/auth');
 
@@ -12,8 +13,17 @@ const llm = new ChatGroq({
   temperature: 0.7,
 });
 
+// Rate limiting for AI generation: 10 per hour to prevent API abuse
+const aiLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 10,
+  message: { message: 'Too many requests, please try again in an hour' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // POST /generate
-router.post('/generate', auth, async (req, res) => {
+router.post('/generate', auth, aiLimiter, async (req, res) => {
   try {
     const { jobDescription, role = 'Software Engineer', difficulty = 'Mid' } = req.body;
 
@@ -28,7 +38,7 @@ router.post('/generate', auth, async (req, res) => {
     };
 
     const promptText = `You are an expert technical interviewer at a top tech company.
-
+    
 Job Description: ${jobDescription}
 Role: ${role}
 Candidate Level: ${difficulty}
@@ -38,7 +48,8 @@ Generate exactly 5 interview questions tailored to a ${difficulty}-level ${role}
 Include a mix of: technical questions specific to the JD, problem-solving questions, and 1 behavioural question.
 Calibre questions appropriately for the ${difficulty} level — not too easy, not too hard.
 
-Return ONLY a valid JSON array of 5 strings. No explanation, no markdown, just the JSON array.
+IMPORTANT: Return ONLY a valid JSON array of 5 strings. No preamble, no explanation, no markdown tags.
+Failure to follow format will result in system error.
 Example format: ["Question 1?", "Question 2?", "Question 3?", "Question 4?", "Question 5?"]`;
 
     const aiResponse = await llm.invoke([new HumanMessage(promptText)]);
@@ -46,7 +57,9 @@ Example format: ["Question 1?", "Question 2?", "Question 3?", "Question 4?", "Qu
 
     let questions;
     try {
-      questions = JSON.parse(response);
+      // Basic sanitization: strip markdown code blocks if AI fails to follow "no markdown" instruction
+      const sanitizedResponse = response.replace(/```json|```/g, '').trim();
+      questions = JSON.parse(sanitizedResponse);
     } catch (parseError) {
       console.error('Failed to parse AI response:', response);
       return res.status(500).json({ message: 'AI returned invalid format, please try again' });
@@ -131,7 +144,7 @@ Candidate's Answer: ${userAnswer}
 
 Evaluate this answer fairly and thoroughly. Consider: technical accuracy, depth of knowledge, communication clarity, and completeness.
 
-Return ONLY a valid JSON object with exactly these keys, no explanation, no markdown:
+IMPORTANT: Return ONLY a valid JSON object with exactly these keys. No explanation, no markdown:
 {
   "score": <number between 0 and 10>,
   "whatWasGood": "<string>",
@@ -145,7 +158,8 @@ Return ONLY a valid JSON object with exactly these keys, no explanation, no mark
 
     let evaluation;
     try {
-      evaluation = JSON.parse(response);
+      const sanitizedResponse = response.replace(/```json|```/g, '').trim();
+      evaluation = JSON.parse(sanitizedResponse);
     } catch (parseError) {
       console.error('Failed to parse AI evaluation:', response);
       return res.status(500).json({ message: 'AI returned invalid format, please try again' });
@@ -167,15 +181,15 @@ Return ONLY a valid JSON object with exactly these keys, no explanation, no mark
     const totalScore = session.answers.reduce((acc, current) => acc + (current.score || 0), 0);
     session.overallScore = totalScore / session.answers.length;
 
-    // Save session using standard save method instead of $push to let Mongoose handle nested schema and recalculations correctly
+    // Save session
     await session.save();
 
-    // Return the full evaluation object as requested
+    // Return the full evaluation object
     return res.status(200).json(evaluation);
 
   } catch (error) {
     console.error('=== /evaluate ERROR ===', error.message || error);
-    return res.status(500).json({ message: 'Server error', detail: error.message });
+    return res.status(500).json({ message: 'Server error' });
   }
 });
 
