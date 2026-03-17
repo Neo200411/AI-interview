@@ -2,6 +2,9 @@
 
 InterviewPrep AI is a modern, feature-rich SaaS platform designed to help software engineers prepare for technical interviews using generative AI. By uploading your resume and specifying your target role, you can experience a tailored, challenging, and realistic mock interview.
 
+**[🔗 Live Demo](https://ai-interview-neo200411s-projects.vercel.app/login)**
+
+
 ## 🚀 Features
 
 * **Smart Question Generation:** Uses LLaMA 3.3 70B via Groq to generate relevant interview questions based on your specific job role, job description, and chosen difficulty level (Junior, Mid, Senior).
