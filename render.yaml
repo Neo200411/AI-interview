@@ -2,7 +2,7 @@ services:
   # Backend Web Service
   - type: web
     name: ai-interview-backend
-    runtime: node
+    env: node
     rootDir: backend
     buildCommand: npm install
     startCommand: npm start
@@ -19,10 +19,10 @@ services:
   # Frontend Static Site
   - type: static
     name: ai-interview-frontend
-    runtime: static
+    env: static
     rootDir: client
     buildCommand: npm install && npm run build
-    publishPath: dist
+    staticPublishPath: dist
     envVars:
       - key: VITE_API_URL
         sync: false
