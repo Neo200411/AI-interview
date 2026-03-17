@@ -1,6 +1,16 @@
 import { useState, useEffect } from 'react';
 import axiosInstance from '../api/axios';
 import { useAuth } from '../context/AuthContext';
+const ROLES = [
+  'Software Engineer',
+  'Frontend Developer',
+  'Backend Developer',
+  'Full Stack Developer',
+  'Data Scientist',
+  'ML Engineer',
+  'DevOps Engineer',
+  'Other'
+];
 
 const Profile = () => {
   const { user, login } = useAuth();
@@ -116,13 +126,17 @@ const Profile = () => {
             <div style={{ display: 'flex', gap: '1rem' }}>
               <div className="form-group" style={{ flex: 1 }}>
                 <label htmlFor="targetRole">Target Role</label>
-                <input 
-                  type="text" 
+                <select 
                   id="targetRole" 
-                  placeholder="e.g. Senior Frontend Engineer" 
                   value={profile.targetRole} 
-                  onChange={handleChange} 
-                />
+                  onChange={handleChange}
+                  className="role-selector"
+                >
+                  <option value="">Select a role...</option>
+                  {ROLES.map((r) => (
+                    <option key={r} value={r}>{r}</option>
+                  ))}
+                </select>
               </div>
 
               <div className="form-group" style={{ flex: 1 }}>

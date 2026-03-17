@@ -13,6 +13,12 @@ router.get('/profile', auth, async (req, res) => {
     // Get total sessions count
     const sessionCount = await Session.countDocuments({ userId: req.user.id });
     
+    console.log(`[DEBUG] Fetched profile for ${user.email}:`, {
+      targetRole: user.targetRole,
+      targetCompany: user.targetCompany,
+      bio: user.bio
+    });
+
     return res.status(200).json({ ...user.toObject(), sessionCount });
   } catch (error) {
     console.error('=== /profile GET ERROR ===', error);
@@ -25,6 +31,8 @@ router.put('/profile', auth, async (req, res) => {
   try {
     const { name, targetRole, targetCompany, bio } = req.body;
     
+    console.log(`[DEBUG] Updating profile for user ${req.user.id}:`, { name, targetRole, targetCompany });
+
     const user = await User.findByIdAndUpdate(
       req.user.id,
       { $set: { name, targetRole, targetCompany, bio } },

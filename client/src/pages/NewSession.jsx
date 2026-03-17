@@ -10,7 +10,8 @@ const ROLES = [
   'Full Stack Developer',
   'Data Scientist',
   'ML Engineer',
-  'DevOps Engineer'
+  'DevOps Engineer',
+  'Other'
 ];
 
 const DIFFICULTIES = ['Junior', 'Mid', 'Senior'];
