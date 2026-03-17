@@ -2,7 +2,7 @@
 
 InterviewPrep AI is a modern, feature-rich SaaS platform designed to help software engineers prepare for technical interviews using generative AI. By uploading your resume and specifying your target role, you can experience a tailored, challenging, and realistic mock interview.
 
-**[🔗 Live Demo](https://ai-interview-neo200411s-projects.vercel.app/login)**
+**[🔗 Live Demo](https://ai-interview-git-main-neo200411s-projects.vercel.app/login)**
 
 
 ## 🚀 Features
@@ -15,6 +15,7 @@ InterviewPrep AI is a modern, feature-rich SaaS platform designed to help softwa
 * **Comprehensive Evaluation:** Receive a detailed score out of 10 for every answer, complete with feedback on what was good, what was missing, the key takeaway, and an ideal model answer.
 * **Progress Tracking:** Monitor your performance across multiple sessions with an interactive dashboard and historical progress charts.
 * **Profile Management:** Set your target role, target company, and professional bio to further customize your experience.
+* **Production-Grade Security:** Hardened with `helmet` security headers, restricted CORS, and rate-limiting to prevent brute-force and API abuse.
 * **Modern SaaS UI:** Enjoy a clean, professional, and visually stunning dark-mode interface built with React.
 
 ## 🛠️ Technology Stack
