@@ -4,7 +4,7 @@ InterviewPrep AI is a sophisticated, AI-driven mock interview platform designed 
 
 Unlike generic practice tools, InterviewPrep AI uses your **actual resume** and **specific job descriptions** to create a custom-tailored interview experience. It doesn't just ask questions; it listens, evaluates, and pushes you further with dynamic follow-ups, ensuring you're prepared for the depth and unpredictability of top-tier tech interviews.
 
-**[🔗 Live Demo]((https://main.df7lzt9wb24rb.amplifyapp]))**
+**[🔗 Live Demo]([https://main.df7lzt9wb24rb.amplifyapp])**
 
 
 ## 🚀 Features
