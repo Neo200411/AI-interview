@@ -23,6 +23,7 @@ const NewSession = () => {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState(null);
+  const [targetCompany, setTargetCompany] = useState('');
 
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
@@ -31,6 +32,9 @@ const NewSession = () => {
   useEffect(() => {
     if (user?.targetRole && ROLES.includes(user.targetRole)) {
       setRole(user.targetRole);
+    }
+    if (user?.targetCompany) {
+      setTargetCompany(user.targetCompany);
     }
   }, [user]);
 
@@ -78,7 +82,8 @@ const NewSession = () => {
       const response = await axiosInstance.post('/api/session/generate', {
         jobDescription,
         role,
-        difficulty
+        difficulty,
+        targetCompany
       });
 
       navigate(`/session/${response.data.sessionId}/interview`, { 
@@ -104,8 +109,8 @@ const NewSession = () => {
         <p className="subtitle">Paste a job description or upload a PDF, select your role, and choose the difficulty.</p>
 
         <form onSubmit={handleSubmit} className="new-session-form">
-          <div style={{ display: 'flex', gap: '1rem' }}>
-            <div className="form-group" style={{ flex: 1 }}>
+          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+            <div className="form-group" style={{ flex: 1, minWidth: '180px' }}>
               <label htmlFor="role">Target Role</label>
               <select 
                 id="role" 
@@ -119,7 +124,18 @@ const NewSession = () => {
               </select>
             </div>
 
-            <div className="form-group" style={{ flex: 1 }}>
+            <div className="form-group" style={{ flex: 1, minWidth: '180px' }}>
+              <label htmlFor="targetCompany">Target Company</label>
+              <input 
+                type="text" 
+                id="targetCompany" 
+                placeholder="e.g. Google, Stripe (Optional)" 
+                value={targetCompany} 
+                onChange={(e) => setTargetCompany(e.target.value)} 
+              />
+            </div>
+
+            <div className="form-group" style={{ flex: 1, minWidth: '180px' }}>
               <label htmlFor="difficulty">Difficulty</label>
               <select 
                 id="difficulty" 

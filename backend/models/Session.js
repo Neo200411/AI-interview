@@ -26,6 +26,14 @@ const sessionSchema = new mongoose.Schema({
     type: String,
     default: 'Software Engineer'
   },
+  difficulty: {
+    type: String,
+    default: 'Mid'
+  },
+  targetCompany: {
+    type: String,
+    default: ''
+  },
   questions: {
     type: [String],
     default: []

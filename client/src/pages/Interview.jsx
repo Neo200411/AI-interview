@@ -12,6 +12,21 @@ const Interview = () => {
   const [questions, setQuestions] = useState(location.state?.questions || []);
   const [role, setRole] = useState(location.state?.role || 'Software Engineer');
   const [loading, setLoading] = useState(!questions.length);
+  
+  // Missing states that were causing the crash
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [timeEnabled, setTimeEnabled] = useState(true);
+  const [timeLeft, setTimeLeft] = useState(TIME_LIMIT);
+  const [evaluation, setEvaluation] = useState(null);
+  const [isEvaluating, setIsEvaluating] = useState(false);
+  const [hint, setHint] = useState('');
+  const [isHinting, setIsHinting] = useState(false);
+  const [followUpQuestion, setFollowUpQuestion] = useState('');
+  const [isFollowGenerating, setIsFollowGenerating] = useState(false);
+  const [userAnswer, setUserAnswer] = useState('');
+  const [error, setError] = useState(null);
+  const [allEvaluations, setAllEvaluations] = useState([]);
+  const [showModelAnswer, setShowModelAnswer] = useState(false);
 
   useEffect(() => {
     const resumeSession = async () => {
@@ -65,7 +80,31 @@ const Interview = () => {
     resumeSession();
   }, [questions.length, sessionId, navigate]);
 
+  const currentQuestion = questions[currentIndex];
+  const isLastQuestion = currentIndex === questions.length - 1;
+
   const timerRef = useRef(null);
+
+  // Timer Effect
+  useEffect(() => {
+    if (timeEnabled && !evaluation && !isEvaluating) {
+      timerRef.current = setInterval(() => {
+        setTimeLeft((prev) => {
+          if (prev <= 1) {
+            clearInterval(timerRef.current);
+            handleSubmitAnswer(true); // Auto submit on zero
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timeEnabled, evaluation, isEvaluating, currentIndex]);
 
   if (loading) {
     return (
@@ -91,36 +130,6 @@ const Interview = () => {
       </div>
     );
   }
-
-  const currentQuestion = questions[currentIndex];
-  const isLastQuestion = currentIndex === questions.length - 1;
-
-  // Timer Effect
-  useEffect(() => {
-    if (timeEnabled && !evaluation && !isEvaluating) {
-      timerRef.current = setInterval(() => {
-        setTimeLeft((prev) => {
-          if (prev <= 1) {
-            clearInterval(timerRef.current);
-            handleSubmitAnswer(true); // Auto submit on zero
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [timeEnabled, evaluation, isEvaluating, currentIndex]);
-
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
 
   const getTimerColor = () => {
     if (timeLeft <= 30) return '#ef4444'; // Red

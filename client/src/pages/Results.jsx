@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import axiosInstance from '../api/axios';
 
 const Results = () => {
   const { sessionId } = useParams();
@@ -10,6 +11,27 @@ const Results = () => {
   const [expandedAnswers, setExpandedAnswers] = useState({});
   const [expandedModels, setExpandedModels] = useState({});
   const [copySuccess, setCopySuccess] = useState(false);
+
+  // Helper to parse the feedback string stored in backend
+  const parseFeedback = (feedbackStr) => {
+    const result = {
+      whatWasGood: '',
+      whatWasMissing: '',
+      keyTakeaway: ''
+    };
+    
+    if (!feedbackStr) return result;
+
+    const goodMatch = feedbackStr.match(/Good: (.*?)(?=\nMissing:|$)/s);
+    const missingMatch = feedbackStr.match(/Missing: (.*?)(?=\nTakeaway:|$)/s);
+    const takeawayMatch = feedbackStr.match(/Takeaway: (.*)/s);
+
+    if (goodMatch) result.whatWasGood = goodMatch[1].trim();
+    if (missingMatch) result.whatWasMissing = missingMatch[1].trim();
+    if (takeawayMatch) result.keyTakeaway = takeawayMatch[1].trim();
+
+    return result;
+  };
 
   useEffect(() => {
     const fetchResults = async () => {
@@ -45,27 +67,6 @@ const Results = () => {
 
     fetchResults();
   }, [location, navigate, sessionId]);
-
-  // Helper to parse the feedback string stored in backend
-  const parseFeedback = (feedbackStr) => {
-    const result = {
-      whatWasGood: '',
-      whatWasMissing: '',
-      keyTakeaway: ''
-    };
-    
-    if (!feedbackStr) return result;
-
-    const goodMatch = feedbackStr.match(/Good: (.*?)(?=\nMissing:|$)/s);
-    const missingMatch = feedbackStr.match(/Missing: (.*?)(?=\nTakeaway:|$)/s);
-    const takeawayMatch = feedbackStr.match(/Takeaway: (.*)/s);
-
-    if (goodMatch) result.whatWasGood = goodMatch[1].trim();
-    if (missingMatch) result.whatWasMissing = missingMatch[1].trim();
-    if (takeawayMatch) result.keyTakeaway = takeawayMatch[1].trim();
-
-    return result;
-  };
 
   if (!evaluations.length) {
     return (

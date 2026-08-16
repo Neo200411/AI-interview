@@ -55,10 +55,10 @@ const Dashboard = () => {
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
-        <div style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', padding: '0.8rem', borderRadius: 'var(--radius-sm)' }}>
-          <p style={{ margin: 0, fontWeight: 600, fontSize: '0.8rem', color: 'var(--text-1)' }}>{label}</p>
-          <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-3)' }}>{payload[0].payload.role}</p>
-          <p style={{ margin: '0.4rem 0 0', fontWeight: 800, fontSize: '1rem', color: 'var(--accent)' }}>Score: {payload[0].value}/10</p>
+        <div style={{ background: 'var(--bg-dark)', border: '1px solid var(--border)', padding: '0.8rem', borderRadius: 'var(--radius-sm)' }}>
+          <p style={{ margin: 0, fontWeight: 600, fontSize: '0.8rem', color: 'var(--text-primary)' }}>{label}</p>
+          <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{payload[0].payload.role}</p>
+          <p style={{ margin: '0.4rem 0 0', fontWeight: 800, fontSize: '1rem', color: 'var(--primary)' }}>Score: {payload[0].value}/10</p>
         </div>
       );
     }
@@ -80,20 +80,20 @@ const Dashboard = () => {
         {!loading && !error && chartData.length >= 2 && (
           <div style={{ marginBottom: '3rem' }}>
             <h2>Progress Over Time</h2>
-            <div style={{ background: 'var(--surface)', padding: '1.5rem 1.5rem 0.5rem 0.5rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)', height: '240px' }}>
+            <div style={{ background: 'var(--bg-card)', padding: '1.5rem 1.5rem 0.5rem 0.5rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)', height: '240px' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                  <XAxis dataKey="date" stroke="var(--text-3)" fontSize={11} tickLine={false} axisLine={false} dy={10} />
-                  <YAxis domain={[0, 10]} stroke="var(--text-3)" fontSize={11} tickLine={false} axisLine={false} tickCount={6} />
-                  <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'var(--border-light)', strokeWidth: 1 }} />
+                  <XAxis dataKey="date" stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false} dy={10} />
+                  <YAxis domain={[0, 10]} stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false} tickCount={6} />
+                  <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'var(--border)', strokeWidth: 1 }} />
                   <Line 
                     type="monotone" 
                     dataKey="score" 
-                    stroke="var(--accent)" 
+                    stroke="var(--primary)" 
                     strokeWidth={3}
-                    dot={{ fill: 'var(--surface)', stroke: 'var(--accent)', strokeWidth: 2, r: 4 }}
-                    activeDot={{ r: 6, fill: 'var(--accent)', stroke: 'var(--surface)' }}
+                    dot={{ fill: 'var(--bg-dark)', stroke: 'var(--primary)', strokeWidth: 2, r: 4 }}
+                    activeDot={{ r: 6, fill: 'var(--primary)', stroke: 'var(--bg-dark)' }}
                     animationDuration={1500}
                   />
                 </LineChart>
@@ -126,7 +126,7 @@ const Dashboard = () => {
                   </span>
                 </div>
                 <p className="job-desc-preview" style={{ marginBottom: '0.4rem' }}>
-                  {session.difficulty && <span style={{ display: 'inline-block', background: 'var(--surface-3)', border: '1px solid var(--border-light)', padding: '0.1rem 0.4rem', borderRadius: '4px', fontSize: '0.65rem', fontWeight: 600, color: 'var(--text-2)', marginRight: '0.5rem' }}>{session.difficulty}</span>}
+                  {session.difficulty && <span style={{ display: 'inline-block', background: 'rgba(255,255,255,0.1)', border: '1px solid var(--border)', padding: '0.1rem 0.4rem', borderRadius: '4px', fontSize: '0.65rem', fontWeight: 600, color: 'var(--text-secondary)', marginRight: '0.5rem' }}>{session.difficulty}</span>}
                   {session.jobDescription.substring(0, 60)}...
                 </p>
                 <div className="session-meta">

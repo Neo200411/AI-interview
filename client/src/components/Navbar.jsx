@@ -20,7 +20,7 @@ const Navbar = () => {
         <div className="navbar-links">
           {token ? (
             <>
-              <Link to="/profile" className="nav-link user-greeting" style={{ marginRight: '0.5rem' }}>
+              <Link to="/profile" className="nav-link user-greeting" style={{ marginRight: '0.5rem', whiteSpace: 'nowrap' }}>
                 Hi, {user?.name || user?.email?.split('@')[0]}
               </Link>
               <Link to="/session/new" className="btn-primary">

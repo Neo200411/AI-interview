@@ -25,7 +25,7 @@ const aiLimiter = rateLimit({
 // POST /generate
 router.post('/generate', auth, aiLimiter, async (req, res) => {
   try {
-    const { jobDescription, role = 'Software Engineer', difficulty = 'Mid' } = req.body;
+    const { jobDescription, role = 'Software Engineer', difficulty = 'Mid', targetCompany = '' } = req.body;
 
     if (!jobDescription || jobDescription.length < 50) {
       return res.status(400).json({ message: 'Job description is required and must be at least 50 characters long.' });
@@ -41,10 +41,10 @@ router.post('/generate', auth, aiLimiter, async (req, res) => {
     
 Job Description: ${jobDescription}
 Role: ${role}
-Candidate Level: ${difficulty}
+${targetCompany ? `Target Company: ${targetCompany}\n` : ''}Candidate Level: ${difficulty}
 Level Guidance: ${difficultyGuide[difficulty] || difficultyGuide.Mid}
 
-Generate exactly 5 interview questions tailored to a ${difficulty}-level ${role}.
+Generate exactly 5 interview questions tailored to a ${difficulty}-level ${role}${targetCompany ? ` at ${targetCompany}` : ''}.
 Include a mix of: technical questions specific to the JD, problem-solving questions, and 1 behavioural question.
 Calibre questions appropriately for the ${difficulty} level — not too easy, not too hard.
 
@@ -74,6 +74,7 @@ Example format: ["Question 1?", "Question 2?", "Question 3?", "Question 4?", "Qu
       jobDescription,
       role,
       difficulty,
+      targetCompany,
       questions,
     });
 
@@ -84,6 +85,7 @@ Example format: ["Question 1?", "Question 2?", "Question 3?", "Question 4?", "Qu
       questions,
       role,
       difficulty,
+      targetCompany,
     });
   } catch (error) {
     console.error(error);

@@ -93,18 +93,19 @@ const Profile = () => {
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 1fr) 2fr', gap: '2rem', alignItems: 'start' }}>
         
         {/* Left Column - Stats & Info */}
-        <div style={{ background: 'var(--surface)', padding: '1.5rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
-          <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'var(--surface-3)', border: '2px solid var(--accent-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', fontWeight: '800', color: 'var(--text-1)', marginBottom: '1.5rem' }}>
-            {profile.name.charAt(0).toUpperCase()}
+        <div style={{ background: 'var(--bg-card)', padding: '1.5rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
+          <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)', border: '2px solid var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '1.5rem' }}>
+            {(profile.name || user?.name || user?.email || 'U').split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)}
           </div>
           
-          <h2 style={{ fontSize: '1rem', color: 'var(--text-1)', fontWeight: '700', marginBottom: '0.2rem' }}>{user?.email}</h2>
-          <p style={{ fontSize: '0.8rem', color: 'var(--text-3)', marginBottom: '1.5rem' }}>Member since {stats.joinedDate}</p>
+          <h2 style={{ fontSize: '1.2rem', color: 'var(--text-primary)', fontWeight: '700', marginBottom: '0.2rem' }}>{profile.name || user?.name || user?.email?.split('@')[0]}</h2>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>{user?.email}</p>
+          <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>Member since {stats.joinedDate}</p>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1px', background: 'var(--border)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', overflow: 'hidden' }}>
-            <div style={{ background: 'var(--surface-2)', padding: '1rem', textAlign: 'center' }}>
-              <span style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--text-1)', display: 'block' }}>{stats.sessionCount}</span>
-              <span style={{ fontSize: '0.65rem', color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: '600' }}>Interviews</span>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1px', background: 'var(--border)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', overflow: 'hidden' }}>
+            <div style={{ background: 'var(--bg-dark)', padding: '1rem', textAlign: 'center' }}>
+              <span style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--text-primary)', display: 'block' }}>{stats.sessionCount}</span>
+              <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: '600' }}>Interviews</span>
             </div>
           </div>
         </div>
@@ -123,8 +124,8 @@ const Profile = () => {
               />
             </div>
 
-            <div style={{ display: 'flex', gap: '1rem' }}>
-              <div className="form-group" style={{ flex: 1 }}>
+            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+              <div className="form-group" style={{ flex: 1, minWidth: '200px' }}>
                 <label htmlFor="targetRole">Target Role</label>
                 <select 
                   id="targetRole" 
@@ -139,12 +140,12 @@ const Profile = () => {
                 </select>
               </div>
 
-              <div className="form-group" style={{ flex: 1 }}>
-                <label htmlFor="targetCompany">Target Company (Optional)</label>
+              <div className="form-group" style={{ flex: 1, minWidth: '200px' }}>
+                <label htmlFor="targetCompany">Target Company</label>
                 <input 
                   type="text" 
                   id="targetCompany" 
-                  placeholder="e.g. Google, Stripe" 
+                  placeholder="e.g. Google, Stripe (Optional)" 
                   value={profile.targetCompany} 
                   onChange={handleChange} 
                 />
