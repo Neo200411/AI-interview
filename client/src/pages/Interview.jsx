@@ -4,6 +4,12 @@ import axiosInstance from '../api/axios';
 
 const TIME_LIMIT = 180; // 3 minutes per question
 
+const formatTime = (seconds) => {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+};
+
 const Interview = () => {
   const { sessionId } = useParams();
   const location = useLocation();
