@@ -1,6 +1,8 @@
 const mongoose = require('mongoose');
 
 const answerSchema = new mongoose.Schema({
+  // Position of the question in session.questions; one answer per index
+  questionIndex: Number,
   question: String,
   userAnswer: String,
   score: {

@@ -10,6 +10,23 @@ const formatTime = (seconds) => {
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 };
 
+// Split the stored "Good: ...\nMissing: ...\nTakeaway: ..." feedback back into fields
+// (same parsing as Results.jsx; tolerant of missing parts or extra newlines)
+const parseFeedback = (feedbackStr) => {
+  const result = { whatWasGood: '', whatWasMissing: '', keyTakeaway: '' };
+  if (!feedbackStr) return result;
+
+  const goodMatch = feedbackStr.match(/Good: (.*?)(?=\nMissing:|$)/s);
+  const missingMatch = feedbackStr.match(/Missing: (.*?)(?=\nTakeaway:|$)/s);
+  const takeawayMatch = feedbackStr.match(/Takeaway: (.*)/s);
+
+  if (goodMatch) result.whatWasGood = goodMatch[1].trim();
+  if (missingMatch) result.whatWasMissing = missingMatch[1].trim();
+  if (takeawayMatch) result.keyTakeaway = takeawayMatch[1].trim();
+
+  return result;
+};
+
 const Interview = () => {
   const { sessionId } = useParams();
   const location = useLocation();
@@ -17,8 +34,10 @@ const Interview = () => {
   
   const [questions, setQuestions] = useState(location.state?.questions || []);
   const [role, setRole] = useState(location.state?.role || 'Software Engineer');
-  const [loading, setLoading] = useState(!questions.length);
-  
+  // Always start by loading progress from the server. Router state survives a page
+  // refresh, so it can't tell us how far the user got.
+  const [loading, setLoading] = useState(true);
+
   // Missing states that were causing the crash
   const [currentIndex, setCurrentIndex] = useState(0);
   const [timeEnabled, setTimeEnabled] = useState(true);
@@ -34,57 +53,90 @@ const Interview = () => {
   const [allEvaluations, setAllEvaluations] = useState([]);
   const [showModelAnswer, setShowModelAnswer] = useState(false);
 
+  // Latest typed answer, readable from the timer callback without a stale closure
+  const answerRef = useRef('');
+
+  // Unsent answers are kept per question in sessionStorage so a refresh doesn't lose them
+  const draftKey = (index) => `interview-draft:${sessionId}:${index}`;
+  const loadDraft = (index) => {
+    try {
+      return sessionStorage.getItem(draftKey(index)) || '';
+    } catch {
+      return '';
+    }
+  };
+  const saveDraft = (index, text) => {
+    try {
+      if (text) sessionStorage.setItem(draftKey(index), text);
+      else sessionStorage.removeItem(draftKey(index));
+    } catch {
+      // Storage unavailable (e.g. private mode); drafts just aren't kept
+    }
+  };
+
+  const updateAnswer = (text) => {
+    answerRef.current = text;
+    setUserAnswer(text);
+  };
+
   useEffect(() => {
     const resumeSession = async () => {
-      if (questions.length > 0) return;
-
       try {
         const response = await axiosInstance.get(`/api/session/${sessionId}`);
         const sessionData = response.data;
-        
+
         if (sessionData.questions && sessionData.questions.length > 0) {
           setQuestions(sessionData.questions);
           setRole(sessionData.role || 'Software Engineer');
-          
-          // Resume progress: skip questions already answered
-          if (sessionData.answers && sessionData.answers.length > 0) {
-            const answeredCount = sessionData.answers.length;
-            
-            // Map previous evaluations to state
-            const previousEvaluations = sessionData.answers.map(ans => ({
+
+          // Map saved answers to the question they belong to. Older answers have no
+          // questionIndex, so fall back to matching the question text.
+          const evaluationsByIndex = {};
+          (sessionData.answers || []).forEach((ans) => {
+            const index = Number.isInteger(ans.questionIndex)
+              ? ans.questionIndex
+              : sessionData.questions.indexOf(ans.question);
+            if (index < 0) return;
+            evaluationsByIndex[index] = {
               score: ans.score,
-              whatWasGood: ans.feedback.split('\n')[0].replace('Good: ', ''),
-              whatWasMissing: ans.feedback.split('\n')[1].replace('Missing: ', ''),
-              keyTakeaway: ans.feedback.split('\n')[2].replace('Takeaway: ', ''),
+              ...parseFeedback(ans.feedback),
               modelAnswer: ans.modelAnswer,
               question: ans.question,
               userAnswer: ans.userAnswer
-            }));
-            
-            setAllEvaluations(previousEvaluations);
-            
-            if (answeredCount < sessionData.questions.length) {
-              setCurrentIndex(answeredCount);
-            } else {
-              // If all answered, go to results
-              navigate(`/session/${sessionId}/results`, { 
-                state: { allEvaluations: previousEvaluations, role: sessionData.role } 
-              });
-            }
+            };
+          });
+          const previousEvaluations = Object.keys(evaluationsByIndex)
+            .map(Number)
+            .sort((a, b) => a - b)
+            .map((index) => evaluationsByIndex[index]);
+          setAllEvaluations(previousEvaluations);
+
+          // Resume at the first question that hasn't been answered yet
+          const nextIndex = sessionData.questions.findIndex((_, index) => !evaluationsByIndex[index]);
+          if (nextIndex === -1) {
+            // If all answered, go to results
+            navigate(`/session/${sessionId}/results`, {
+              state: { allEvaluations: previousEvaluations, role: sessionData.role }
+            });
+            return;
           }
+          setCurrentIndex(nextIndex);
+          updateAnswer(loadDraft(nextIndex));
         } else {
           navigate('/dashboard');
         }
       } catch (err) {
         console.error('Failed to resume interview session:', err);
-        navigate('/dashboard');
+        // Without the server we can't know progress; start from the questions we were given, if any
+        if (!location.state?.questions?.length) navigate('/dashboard');
       } finally {
         setLoading(false);
       }
     };
 
     resumeSession();
-  }, [questions.length, sessionId, navigate]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionId, navigate]);
 
   const currentQuestion = questions[currentIndex];
   const isLastQuestion = currentIndex === questions.length - 1;
@@ -93,7 +145,7 @@ const Interview = () => {
 
   // Timer Effect
   useEffect(() => {
-    if (timeEnabled && !evaluation && !isEvaluating) {
+    if (!loading && timeEnabled && !evaluation && !isEvaluating) {
       timerRef.current = setInterval(() => {
         setTimeLeft((prev) => {
           if (prev <= 1) {
@@ -110,7 +162,7 @@ const Interview = () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [timeEnabled, evaluation, isEvaluating, currentIndex]);
+  }, [loading, timeEnabled, evaluation, isEvaluating, currentIndex]);
 
   if (loading) {
     return (
@@ -173,7 +225,9 @@ const Interview = () => {
   };
 
   const handleSubmitAnswer = async (autoSubmit = false) => {
-    if (!autoSubmit && userAnswer.length < 10) {
+    // Read from the ref: the timer may call an older copy of this function
+    const answer = answerRef.current;
+    if (!autoSubmit && answer.length < 10) {
       setError('Your answer must be at least 10 characters long.');
       return;
     }
@@ -185,11 +239,12 @@ const Interview = () => {
     try {
       const response = await axiosInstance.post('/api/session/evaluate', {
         sessionId,
-        question: currentQuestion,
+        questionIndex: currentIndex,
         // Send a default if auto-submitted empty
-        userAnswer: userAnswer.trim() === '' ? '(Candidate ran out of time and submitted blank)' : userAnswer
+        userAnswer: answer.trim() === '' ? '(Candidate ran out of time and submitted blank)' : answer
       });
-      
+
+      saveDraft(currentIndex, '');
       setEvaluation(response.data);
       setShowModelAnswer(false);
     } catch (err) {
@@ -201,7 +256,7 @@ const Interview = () => {
 
   const handleNext = () => {
     setAllEvaluations([...allEvaluations, evaluation]);
-    setUserAnswer('');
+    updateAnswer(loadDraft(currentIndex + 1));
     setEvaluation(null);
     setError(null);
     setHint('');
@@ -293,7 +348,10 @@ const Interview = () => {
               className="answer-textarea"
               placeholder="Type your answer here..."
               value={userAnswer}
-              onChange={(e) => setUserAnswer(e.target.value)}
+              onChange={(e) => {
+                updateAnswer(e.target.value);
+                saveDraft(currentIndex, e.target.value);
+              }}
               disabled={isEvaluating}
             ></textarea>
 

@@ -121,13 +121,13 @@ router.get('/:sessionId', auth, async (req, res) => {
 // POST /evaluate
 router.post('/evaluate', auth, async (req, res) => {
   try {
-    const { sessionId, question, userAnswer } = req.body;
+    const { sessionId, questionIndex, userAnswer } = req.body;
 
     // Validate request
-    if (!sessionId || !question || !userAnswer) {
-      return res.status(400).json({ message: 'Session ID, question, and user answer are required.' });
+    if (!sessionId || !userAnswer) {
+      return res.status(400).json({ message: 'Session ID and user answer are required.' });
     }
-    
+
     if (userAnswer.length < 10) {
       return res.status(400).json({ message: 'User answer must be at least 10 characters long.' });
     }
@@ -137,6 +137,16 @@ router.post('/evaluate', auth, async (req, res) => {
     if (!session || session.userId.toString() !== req.user.id) {
       return res.status(404).json({ message: 'Session not found or access denied.' });
     }
+
+    // Resolve which question is being answered. Older clients send only the question text.
+    const index = Number.isInteger(questionIndex)
+      ? questionIndex
+      : session.questions.indexOf(req.body.question);
+    if (index < 0 || index >= session.questions.length) {
+      return res.status(400).json({ message: 'Invalid question for this session.' });
+    }
+    // Always grade the question stored in the session, not text sent by the client
+    const question = session.questions[index];
 
     const promptText = `You are an expert technical interviewer evaluating a candidate's interview answer.
 
@@ -167,17 +177,31 @@ IMPORTANT: Return ONLY a valid JSON object with exactly these keys. No explanati
       return res.status(500).json({ message: 'AI returned invalid format, please try again' });
     }
 
+    // Keep the score inside the schema's 0-10 range so save() can't fail on a bad LLM value
+    const rawScore = Number(evaluation.score);
+    const score = Number.isFinite(rawScore) ? Math.min(10, Math.max(0, rawScore)) : 0;
+
     // Construct the answer object directly mapping to schema
     const newAnswer = {
+      questionIndex: index,
       question,
       userAnswer,
-      score: evaluation.score || 0,
+      score,
       feedback: `Good: ${evaluation.whatWasGood}\nMissing: ${evaluation.whatWasMissing}\nTakeaway: ${evaluation.keyTakeaway}`,
       modelAnswer: evaluation.modelAnswer
     };
 
-    // Push the new answer
-    session.answers.push(newAnswer);
+    // One answer per question: replace a previous answer to this question instead of adding a duplicate.
+    // Answers saved before questionIndex existed are matched by their question text.
+    const answerIndexOf = (a) => (Number.isInteger(a.questionIndex) ? a.questionIndex : session.questions.indexOf(a.question));
+    const existing = session.answers.findIndex((a) => answerIndexOf(a) === index);
+    if (existing !== -1) {
+      session.answers.set(existing, newAnswer);
+    } else {
+      // Insert in question order so answers line up with session.questions
+      const insertAt = session.answers.findIndex((a) => answerIndexOf(a) > index);
+      session.answers.splice(insertAt === -1 ? session.answers.length : insertAt, 0, newAnswer);
+    }
 
     // Recalculate overall score
     const totalScore = session.answers.reduce((acc, current) => acc + (current.score || 0), 0);
@@ -187,7 +211,7 @@ IMPORTANT: Return ONLY a valid JSON object with exactly these keys. No explanati
     await session.save();
 
     // Return the full evaluation object
-    return res.status(200).json(evaluation);
+    return res.status(200).json({ ...evaluation, score, questionIndex: index });
 
   } catch (error) {
     console.error('=== /evaluate ERROR ===', error.message || error);
