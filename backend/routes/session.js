@@ -9,7 +9,8 @@ const auth = require('../middleware/auth');
 // Initialize ChatGroq
 const llm = new ChatGroq({
   apiKey: process.env.GROQ_API_KEY,
-  model: 'llama-3.3-70b-versatile',
+  // Override with GROQ_MODEL when Groq retires or renames a model
+  model: process.env.GROQ_MODEL || 'llama-3.3-70b-versatile',
   temperature: 0.7,
 });
 
